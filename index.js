@@ -1,11 +1,13 @@
-var express = require('express');
-var app = express();
-const { createDataset, createTable } = require('./helpers');
+import express from 'express';
+import path from 'path';
+import { createDataset, createTable, deleteDataset } from './helpers/index.js';
 
+const app = express();
+const port = process.env.PORT || 3000;
 
 const projectId = 'my_project_id123';
 const datasetId = 'my_dataset_1231';
-const tableId = 'your-table-id';
+const tableId = 'your_table_id11111';
 const schema = [
   {
     name: 'name',
@@ -19,20 +21,43 @@ const schema = [
   },
 ];
 
+if(process.env.NODE_ENV === 'production'){
+  app.use(express.static(path.join(__dirname, 'client/build')));
 
-app.get('/',async function (req, res) {
-    createDataset(projectId, datasetId)
-    .then(() => createTable(projectId, datasetId, tableId, schema))
-    .catch((error) => console.error(error));
+  app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+  });
+}
 
-   res.send('Hello World');
-})
+app.get('/create-table', async (req, res) => {
+  try {
+    await createDataset(datasetId);
+    await createTable(datasetId, tableId, schema);
+  } catch (error) {
+    console.error(error);
+  }
 
-var server = app.listen(8081, function () {
+  res.json({
+    success:true,
+    message:'Hello World'
+  });
+});
+app.get('/delete-dataset', async (req, res) => {
+  try {
+    await deleteDataset(datasetId);
+    res.json({
+      success:true
+    })
+  } catch (error) {
+    console.error(error);
+    res.json({
+      success:false,
+    });
+  }
 
-  var host = server.address().address
-  var port = server.address().port
+ 
+});
 
-  console.log("Ung dung Node.js dang lang nghe tai dia chi: http://%s:%s", host, port)
-
-})
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
